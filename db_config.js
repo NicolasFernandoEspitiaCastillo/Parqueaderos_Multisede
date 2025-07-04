@@ -101,39 +101,76 @@ db.createCollection("sedes", {
 
 db.createCollection("vehiculos", {
   validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: [
-            "placa", 
-            "tipo_vehiculo", 
-            "usuario_id"
-        ],
-      properties: {
-        placa: {
-          bsonType: "string",
-          description: "Placa única del vehículo"
-        },
-        tipo: {
-          bsonType: "string",
-          enum: ["carro", "moto", "bicicleta", "camion"],
-          description: "Tipo de vehículo"
-        },
-        color: {
-          bsonType: "string",
-          description: "Color del vehículo"
-        },
-        marca: {
-          bsonType: "string",
-          description: "Marca del vehículo"
-        },
-        usuario_id: {
-          bsonType: "objectId",
-          description: "Referencia al usuario dueño del vehículo"
+    $expr: {
+      $and: [
+        { $in: ["$tipo_vehiculo", ["carro", "moto", "bicicleta", "camion"]] },
+        { $ne: ["$usuario_id", null] },
+        {
+          $switch: {
+            branches: [
+              {
+                case: { $eq: ["$tipo_vehiculo", "carro"] },
+                then: { $regexMatch: { input: "$placa", regex: /^[A-Z]{3}-\d{3}$/ } }
+              },
+              {
+                case: { $eq: ["$tipo_vehiculo", "moto"] },
+                then: { $regexMatch: { input: "$placa", regex: /^[A-Z]{3}-\d{2}[A-Z]$/ } }
+              },
+              {
+                case: { $eq: ["$tipo_vehiculo", "bicicleta"] },
+                then: { $regexMatch: { input: "$placa", regex: /^\d{10}$/ } }
+              },
+              {
+                case: { $eq: ["$tipo_vehiculo", "camion"] },
+                then: { $regexMatch: { input: "$placa", regex: /^[A-Z]{3}-\d{3}$/ } }
+              }
+            ],
+            default: false
+          }
         }
-      }
+      ]
     }
-  }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
 });
+
+
+// db.createCollection("vehiculos", {
+//   validator: {
+//     $jsonSchema: {
+//       bsonType: "object",
+//       required: [
+//             "placa", 
+//             "tipo_vehiculo", 
+//             "usuario_id"
+//         ],
+//       properties: {
+//         placa: {
+//           bsonType: "string",
+//           description: "Placa única del vehículo"
+//         },
+//         tipo: {
+//           bsonType: "string",
+//           enum: ["carro", "moto", "bicicleta", "camion"],
+//           description: "Tipo de vehículo"
+//         },
+//         color: {
+//           bsonType: "string",
+//           description: "Color del vehículo"
+//         },
+//         marca: {
+//           bsonType: "string",
+//           description: "Marca del vehículo"
+//         },
+//         usuario_id: {
+//           bsonType: "objectId",
+//           description: "Referencia al usuario dueño del vehículo"
+//         }
+//       }
+//     }
+//   }
+// });
 
 
 db.createCollection("parqueos", {
